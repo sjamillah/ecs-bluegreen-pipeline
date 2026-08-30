@@ -142,10 +142,31 @@ Resources:
       RouteTableIds: [!Ref PrivateRouteTable]
  
 Outputs:
-  VpcId: {Value: !Ref VPC}
-  PublicSubnetAId: {Value: !Ref PublicSubnetA}
-  PublicSubnetBId: {Value: !Ref PublicSubnetB}
-  PrivateSubnetAId: {Value: !Ref PrivateSubnetA}
-  PrivateSubnetBId: {Value: !Ref PrivateSubnetB}
-  ALBSecurityGroupId: {Value: !Ref ALBSecurityGroup}
-  ECSTaskSecurityGroupId: {Value: !Ref ECSTaskSecurityGroup}
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: lab2-VpcId
+  PublicSubnetAId:
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: lab2-PublicSubnetAId
+  PublicSubnetBId:
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: lab2-PublicSubnetBId
+  PrivateSubnetAId:
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: lab2-PrivateSubnetAId
+  PrivateSubnetBId:
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: lab2-PrivateSubnetBId
+  ALBSecurityGroupId:
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: lab2-ALBSecurityGroupId
+  ECSTaskSecurityGroupId:
+    Value: !Ref ECSTaskSecurityGroup
+    Export:
+      Name: lab2-ECSTaskSecurityGroupId
