@@ -134,4 +134,7 @@ Outputs:
   ServiceName: {Value: !GetAtt ECSService.Name}
   BlueTargetGroupArn: {Value: !Ref BlueTargetGroup}
   GreenTargetGroupArn: {Value: !Ref GreenTargetGroup}
-  ALBListenerArn: {Value: !Ref ALBListener}
+  ALBListenerArn:
+    Value: !Ref ALBListener
+    Export:
+      Name: lab2-ALBListenerArn
