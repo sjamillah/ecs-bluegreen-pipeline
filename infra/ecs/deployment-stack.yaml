@@ -1,0 +1,5 @@
+template-file-path: infra/ecs/ecs-stack.yaml
+parameters:
+  ImageUri: 697863031884.dkr.ecr.eu-north-1.amazonaws.com/ecs-app:697863031884.dkr.ecr.eu-north-1.amazonaws.com/ecs-app:16716a6
+  TaskExecutionRoleArn: arn:aws:iam::697863031884:role/lab2-ecs-task-execution-role
+  TaskRoleArn: arn:aws:iam::697863031884:role/lab2-ecs-task-role
