@@ -1,0 +1,3 @@
+Parameters:
+  RepositoryName: ecs-app
+  CIRoleArn: arn:aws:iam::697863031884:role/lab2-ecs-role
