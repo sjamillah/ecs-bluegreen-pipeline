@@ -129,11 +129,22 @@ Resources:
         PredefinedMetricSpecification: { PredefinedMetricType: ECSServiceAverageCPUUtilization }
 
 Outputs:
-  ALBDNSName: {Value: !GetAtt ALB.DNSName}
-  ClusterName: {Value: !Ref ECSCluster}
-  ServiceName: {Value: !GetAtt ECSService.Name}
-  BlueTargetGroupArn: {Value: !Ref BlueTargetGroup}
-  GreenTargetGroupArn: {Value: !Ref GreenTargetGroup}
+  ClusterName:
+    Value: !Ref ECSCluster
+    Export:
+      Name: lab2-ClusterName
+  ServiceName:
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: lab2-ServiceName
+  BlueTargetGroupName:
+    Value: !GetAtt BlueTargetGroup.TargetGroupName
+    Export:
+      Name: lab2-BlueTargetGroupName
+  GreenTargetGroupName:
+    Value: !GetAtt GreenTargetGroup.TargetGroupName
+    Export:
+      Name: lab2-GreenTargetGroupName
   ALBListenerArn:
     Value: !Ref ALBListener
     Export:
