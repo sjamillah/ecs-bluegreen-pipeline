@@ -22,6 +22,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -33,22 +36,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image to ECR
+      - name: Build, tag, and push image to ECR with GHA Caching
         id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ vars.LAB2_ECR_REPO }}
-        run: |
-          IMAGE_TAG="$(git rev-parse --short HEAD)-${{ github.run_number }}-${{ github.run_attempt }}"
-          
-          # Build image with unique tag
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          # Push only the unique tag
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-          # Pass unique tag to ECS render step
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Pass built image URI to output step
+        id: image-output
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}"
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
       - name: Render Amazon ECS task definition
         id: render-task-def
@@ -56,7 +58,7 @@ jobs:
         with:
           task-definition: infra/pipeline/taskdef-template.json
           container-name: lab2-app
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.image-output.outputs.image }}
 
       - name: Deploy to Amazon ECS via CodeDeploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
