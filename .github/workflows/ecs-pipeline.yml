@@ -63,7 +63,7 @@ jobs:
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: lab2-service
-          cluster: lab2-cluster
+          cluster: lab2-ecs-cluster
           codedeploy-application: lab2-app
           codedeploy-deployment-group: lab2-deployment-group
           codedeploy-appspec: infra/pipeline/appspec.yaml
