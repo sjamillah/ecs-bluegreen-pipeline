@@ -101,11 +101,11 @@ Resources:
       NetworkConfiguration:
         AwsvpcConfiguration:
           Subnets:
-            - !ImportValue lab2-PrivateSubnetAId
-            - !ImportValue lab2-PrivateSubnetBId
+            - !ImportValue lab2-PublicSubnetAId
+            - !ImportValue lab2-PublicSubnetBId
           SecurityGroups:
             - !ImportValue lab2-ECSTaskSecurityGroupId
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
       LoadBalancers:
         - {ContainerName: lab2-app, ContainerPort: 8080, TargetGroupArn: !Ref BlueTargetGroup}
 
