@@ -1,4 +1,4 @@
-name: Build and Push to ECR
+name: Build, Push, and Deploy to ECS
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,7 +33,8 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image
+      - name: Build, tag, and push image to ECR
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ vars.LAB2_ECR_REPO }}
@@ -41,4 +42,23 @@ jobs:
           IMAGE_TAG=$(git rev-parse --short HEAD)
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "Pushed tag: $IMAGE_TAG"
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Render Amazon ECS task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infra/pipeline/taskdef-template.json
+          container-name: lab2-app
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy to Amazon ECS via CodeDeploy
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: lab2-service
+          cluster: lab2-cluster
+          codedeploy-application: lab2-app
+          codedeploy-deployment-group: lab2-deployment-group
+          appspec: infra/pipeline/appspec.yaml
+          wait-for-deployment: true
