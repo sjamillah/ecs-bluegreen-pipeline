@@ -1,31 +1,34 @@
 # ---- Stage 1: builder ----
 FROM python:3.12-slim@sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a AS builder
+
 WORKDIR /app
 COPY app/requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Install dependencies into standard wheel cache directory
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ---- Stage 2: target ----
 FROM python:3.12-slim@sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a AS target
 
-# Accept APP_VERSION from GitHub Actions build-args
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
-ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/usr/local/lib/python3.12/site-packages
 
+# Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser
 WORKDIR /app
 
-COPY --from=builder /root/.local /home/appuser/.local
+# Copy installed dependencies directly to system site-packages
+COPY --from=builder /install /usr/local
 COPY app/ .
 
-RUN chown -R appuser:appuser /app /home/appuser/.local
+# Ensure appuser owns application assets
+RUN chown -R appuser:appuser /app
+
 USER appuser
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
-
-# Updated entrypoint to point to app:app instead of main:app
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "app:app"]
+# Production Gunicorn invocation with explicit worker timeout settings
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "30", "app:app"]
