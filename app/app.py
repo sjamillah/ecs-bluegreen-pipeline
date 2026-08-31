@@ -1,10 +1,11 @@
 """Full-stack Flask app serving a modern deployment status interface."""
+import os
 from flask import Flask, jsonify, render_template
 from dotenv import load_dotenv
-import os
+
+load_dotenv()
 
 app = Flask(__name__)
-load_dotenv()
 
 NAME = os.getenv("FULL_NAME", "User")
 APP_VERSION = os.getenv("APP_VERSION", "dev")
