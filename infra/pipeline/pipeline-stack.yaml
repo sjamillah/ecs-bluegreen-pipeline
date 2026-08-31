@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CodeDeploy Blue/Green deployment group for ECS Fargate
+
+Parameters:
+  CodeDeployServiceRoleArn:
+    Type: String
+    Default: arn:aws:iam::697863031884:role/lab2-codedeploy-role
+    Description: IAM Service Role ARN for CodeDeploy to manage ECS Blue/Green deployments
+
+  ExportPrefix:
+    Type: String
+    Default: lab2
+    Description: Prefix used in Export names from the main ECS stack (e.g., lab2)
+
+Resources:
+  CodeDeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: lab2-app
+      ComputePlatform: ECS
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApp
+      DeploymentGroupName: lab2-deployment-group
+      ServiceRoleArn: !Ref CodeDeployServiceRoleArn
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      BlueGreenDeploymentConfiguration:
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+      ECSServices:
+        - ClusterName: !ImportValue 
+            Fn::Sub: '${ExportPrefix}-ClusterName'
+          ServiceName: !ImportValue 
+            Fn::Sub: '${ExportPrefix}-ServiceName'
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - TargetGroups:
+              - Name: !ImportValue 
+                  Fn::Sub: '${ExportPrefix}-BlueTargetGroupName'
+              - Name: !ImportValue 
+                  Fn::Sub: '${ExportPrefix}-GreenTargetGroupName'
+            ProdTrafficRoute:
+              ListenerArns:
+                - !ImportValue 
+                    Fn::Sub: '${ExportPrefix}-ALBListenerArn'
+
+Outputs:
+  CodeDeployApplicationName:
+    Value: !Ref CodeDeployApp
+    Description: Name of the CodeDeploy Application
+  CodeDeployDeploymentGroupName:
+    Value: !Ref CodeDeployDeploymentGroup
+    Description: Name of the CodeDeploy Deployment Group
