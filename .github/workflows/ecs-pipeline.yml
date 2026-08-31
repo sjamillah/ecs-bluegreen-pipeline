@@ -60,5 +60,4 @@ jobs:
           cluster: lab2-cluster
           codedeploy-application: lab2-app
           codedeploy-deployment-group: lab2-deployment-group
-          appspec: infra/pipeline/appspec.yaml
-          wait-for-deployment: true
+          codedeploy-appspec: infra/pipeline/appspec.yaml
