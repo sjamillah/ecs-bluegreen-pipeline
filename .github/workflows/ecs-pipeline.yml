@@ -81,4 +81,4 @@ jobs:
           codedeploy-application: lab2-app
           codedeploy-deployment-group: lab2-deployment-group
           codedeploy-appspec: infra/pipeline/appspec.yaml
-          wait-for-deployment: false
+          wait-for-service-stability: true
