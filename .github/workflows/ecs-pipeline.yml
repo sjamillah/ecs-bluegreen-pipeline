@@ -49,6 +49,7 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
