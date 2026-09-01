@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Private, immutable ECR repository for Lab 2
-# v1 
+# v1.1 
 Parameters:
   RepositoryName:
     Type: String
