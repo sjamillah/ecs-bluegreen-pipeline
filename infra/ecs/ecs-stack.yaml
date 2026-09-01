@@ -63,9 +63,13 @@ Resources:
       VpcId: !ImportValue lab2-VpcId
       TargetType: ip
       HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 15
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 2
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '5'
 
   GreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -76,9 +80,13 @@ Resources:
       VpcId: !ImportValue lab2-VpcId
       TargetType: ip
       HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 15
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 2
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 3
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '5'
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
