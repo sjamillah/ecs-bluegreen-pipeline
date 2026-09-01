@@ -43,6 +43,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Compute image tag
+        id: tag
+        run: echo "value=v${{ github.run_number }}.${{ github.run_attempt }}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
       - name: Build, tag, and push image to ECR with GHA Caching
         id: build-image
         uses: docker/build-push-action@v5
@@ -50,15 +54,15 @@ jobs:
           context: .
           push: true
           provenance: false
-          tags: ${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}
+          build-args: |
+            APP_VERSION=${{ steps.tag.outputs.value }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ steps.tag.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Pass built image URI to output step
         id: image-output
-        run: |
-          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ github.sha }}-${{ github.run_number }}-${{ github.run_attempt }}"
-          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+        run: echo "image=${{ steps.login-ecr.outputs.registry }}/${{ vars.LAB2_ECR_REPO }}:${{ steps.tag.outputs.value }}" >> $GITHUB_OUTPUT
 
       - name: Render Amazon ECS task definition
         id: render-task-def
