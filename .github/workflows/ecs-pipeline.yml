@@ -37,7 +37,7 @@ jobs:
           role-to-assume: arn:aws:iam::697863031884:role/lab2-ecs-role
           aws-region: eu-north-1
           audience: sts.amazonaws.com
-          aws-sts-regional-endpoints: regional
+          role-skip-session-tagging: true
 
       - name: Login to Amazon ECR
         id: login-ecr
