@@ -105,6 +105,7 @@ Resources:
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: 1
       LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 60
       DeploymentController: { Type: CODE_DEPLOY }
       NetworkConfiguration:
         AwsvpcConfiguration:

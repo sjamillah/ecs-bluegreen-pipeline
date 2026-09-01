@@ -22,14 +22,19 @@ jobs:
         with:
           persist-credentials: false
 
+      # Fail fast and cheap: no AWS calls, no image build, ~20 seconds.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: |
+          pip install -q -r app/requirements.txt pytest
+          PYTHONPATH=app pytest tests/ -q
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Debug OIDC Token Claims
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Actor: ${{ github.actor }}"
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4

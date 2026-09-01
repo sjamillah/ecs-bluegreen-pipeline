@@ -1,422 +1,504 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <title>ECS Blue/Green Dashboard</title>
-    <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Typerush</title>
+<style>
+    :root {
+        --paper:  #efece3;
+        --raised: #e6e2d6;
+        --ink:    #262320;
+        --soft:   #6f6a60;
+        --faint:  #b6afa1;
+        --rule:   #d6d0c1;
+        --hit:    #262320;
+        --miss:   #b23a1c;
+        --live:   #46701f;
+        --mono: "SF Mono", "Cascadia Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
         :root {
-            --bg: #090d16;
-            --card: rgba(30, 41, 59, 0.7);
-            --card-line: rgba(255, 255, 255, 0.1);
-            --inset: rgba(15, 23, 42, 0.6);
-            --inset-line: rgba(255, 255, 255, 0.05);
-            --text: #f8fafc;
-            --muted: #64748b;
-            --dim: #94a3b8;
-            --accent: #38bdf8;
-            --ok: #34d399;
-            --warn: #fbbf24;
-            --bad: #f87171;
-            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --paper:  #191713;
+            --raised: #211e19;
+            --ink:    #e9e3d6;
+            --soft:   #9a9386;
+            --faint:  #514b41;
+            --rule:   #332f27;
+            --hit:    #e9e3d6;
+            --miss:   #e0714c;
+            --live:   #a3c76b;
         }
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            background-image:
-                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 50%);
-            background-attachment: fixed;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 1.5rem;
-            line-height: 1.5;
-        }
+    body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--mono);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 2rem 1.5rem 3rem;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
 
-        .card {
-            background: var(--card);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--card-line);
-            border-radius: 16px;
-            padding: 2.25rem;
-            max-width: 480px;
-            width: 100%;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
+    .shell { width: 100%; max-width: 46rem; margin: auto; }
 
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(56, 189, 248, 0.3);
-        }
+    /* ---------- masthead ---------- */
+    header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding-bottom: 0.9rem;
+        border-bottom: 1px solid var(--rule);
+    }
 
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
+    .wordmark {
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+    .wordmark span { color: var(--faint); font-weight: 400; }
 
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(14, 165, 233, 0.15);
-            color: var(--accent);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
+    .modes { display: flex; gap: 0.15rem; }
 
-        .pulse {
-            width: 6px;
-            height: 6px;
-            background-color: currentColor;
-            border-radius: 50%;
-            box-shadow: 0 0 8px currentColor;
-            animation: pulse-animation 2s infinite;
-            flex: none;
-        }
+    .modes button {
+        font: inherit;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        color: var(--soft);
+        background: none;
+        border: 1px solid transparent;
+        padding: 0.2rem 0.6rem;
+        cursor: pointer;
+        border-radius: 2px;
+    }
+    .modes button:hover { color: var(--ink); }
+    .modes button[aria-pressed="true"] {
+        color: var(--ink);
+        border-color: var(--rule);
+        background: var(--raised);
+    }
+    .modes button:focus-visible { outline: 2px solid var(--soft); outline-offset: 1px; }
 
-        @keyframes pulse-animation {
-            0%   { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-            70%  { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
-        }
+    /* ---------- readout ---------- */
+    .readout {
+        display: flex;
+        gap: 2.5rem;
+        padding: 1.75rem 0 1.5rem;
+        font-variant-numeric: tabular-nums;
+    }
 
-        .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-family: var(--mono);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--ok);
-            transition: color 0.25s ease;
-        }
-        .status[data-state="down"]    { color: var(--bad); }
-        .status[data-state="waiting"] { color: var(--muted); }
+    .stat .k {
+        display: block;
+        font-size: 0.63rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin-bottom: 0.15rem;
+    }
+    .stat .v { font-size: 1.7rem; font-weight: 700; line-height: 1.1; }
+    .stat.clock .v { color: var(--soft); }
+    .stat.clock.running .v { color: var(--live); }
 
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.4rem;
-        }
+    /* ---------- typing surface ---------- */
+    .surface {
+        position: relative;
+        border-top: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        padding: 1.5rem 0;
+        cursor: text;
+    }
 
-        .subtitle {
-            color: var(--dim);
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
+    .viewport { height: 6.6rem; overflow: hidden; }
+    .stream {
+        font-size: 1.28rem;
+        line-height: 2.2rem;
+        letter-spacing: 0.01em;
+        transition: transform 0.15s ease;
+        color: var(--faint);
+    }
 
-        .meta-grid {
-            display: grid;
-            gap: 0.75rem;
-        }
+    .w { display: inline-block; margin-right: 0.62rem; white-space: nowrap; }
+    .c { position: relative; }
+    .c.hit  { color: var(--hit); }
+    .c.miss { color: var(--miss); text-decoration: underline; text-decoration-thickness: 1px; }
+    .c.extra { color: var(--miss); opacity: 0.65; }
 
-        .meta-item {
-            background: var(--inset);
-            border: 1px solid var(--inset-line);
-            border-radius: 10px;
-            padding: 0.85rem 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        }
+    .c.at::before {
+        content: "";
+        position: absolute;
+        left: -2px; top: 0.1em; bottom: 0.05em;
+        width: 2px;
+        background: var(--live);
+        animation: blink 1.1s steps(1) infinite;
+    }
+    .w.done.bad { text-decoration: underline; text-decoration-color: var(--miss); text-underline-offset: 4px; }
 
-        .meta-label {
-            font-size: 0.8rem;
-            color: var(--muted);
-            font-weight: 500;
-            flex: none;
-        }
+    @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
-        .meta-value {
-            font-family: var(--mono);
-            font-size: 0.85rem;
-            color: var(--accent);
-            font-weight: 600;
-            text-align: right;
-            word-break: break-all;
-        }
+    #catcher {
+        position: absolute; inset: 0;
+        opacity: 0; border: 0; padding: 0;
+        font: inherit; resize: none; cursor: text;
+    }
 
-        .meta-value.plain { color: var(--dim); }
-        .status-ok { color: var(--ok); }
+    .veil {
+        position: absolute; inset: 0;
+        display: none;
+        align-items: center; justify-content: center;
+        background: var(--paper);
+        font-size: 0.85rem; color: var(--soft);
+        letter-spacing: 0.04em;
+    }
+    .surface.blurred .veil { display: flex; }
 
-        .flash { animation: flash-animation 1.6s ease-out; }
-        @keyframes flash-animation {
-            0%   { background: rgba(52, 211, 153, 0.28); border-color: rgba(52, 211, 153, 0.6); }
-            100% { background: var(--inset); border-color: var(--inset-line); }
-        }
+    /* ---------- result ---------- */
+    .result { display: none; padding: 1.75rem 0 0; }
+    .result.show { display: block; }
+    .result .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+        gap: 1.25rem 2rem;
+        margin-bottom: 1.25rem;
+    }
+    .result .big { font-size: 2.9rem; font-weight: 700; line-height: 1; }
+    .result .k {
+        display: block; font-size: 0.63rem; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--faint); margin-bottom: 0.3rem;
+    }
+    .result .v { font-size: 1.3rem; font-weight: 700; }
+    .pb { color: var(--live); }
 
-        .timeline {
-            margin-top: 1.5rem;
-            border-top: 1px solid var(--inset-line);
-            padding-top: 1.25rem;
-        }
+    /* ---------- footer ---------- */
+    footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.75rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--rule);
+        font-size: 0.72rem;
+        color: var(--faint);
+        letter-spacing: 0.04em;
+    }
+    footer kbd {
+        font: inherit;
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        padding: 0.05rem 0.3rem;
+        color: var(--soft);
+    }
+    #build { color: var(--faint); }
+    #build.moved { color: var(--live); }
+    #dot { color: var(--live); }
+    #dot.down { color: var(--miss); }
 
-        .timeline h2 {
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 0.75rem;
-        }
+    @media (max-width: 540px) {
+        .readout { gap: 1.5rem; }
+        .stat .v { font-size: 1.4rem; }
+        .stream { font-size: 1.1rem; line-height: 2rem; }
+        .viewport { height: 6rem; }
+    }
 
-        .timeline ol {
-            list-style: none;
-            display: grid;
-            gap: 0.4rem;
-            max-height: 9.5rem;
-            overflow-y: auto;
-        }
-
-        .timeline li {
-            display: flex;
-            align-items: baseline;
-            gap: 0.7rem;
-            font-family: var(--mono);
-            font-size: 0.78rem;
-            padding: 0.3rem 0.1rem;
-        }
-
-        .t-time { color: var(--muted); flex: none; }
-        .t-ver  { color: var(--dim); word-break: break-all; }
-        .timeline li.switched .t-ver { color: var(--ok); }
-        .timeline li.switched::after {
-            content: "switched";
-            margin-left: auto;
-            font-size: 0.68rem;
-            color: var(--ok);
-            letter-spacing: 0.04em;
-            flex: none;
-        }
-
-        .hint {
-            margin-top: 1.1rem;
-            font-size: 0.75rem;
-            color: var(--warn);
-            background: rgba(251, 191, 36, 0.08);
-            border: 1px solid rgba(251, 191, 36, 0.25);
-            border-radius: 8px;
-            padding: 0.6rem 0.75rem;
-            line-height: 1.45;
-        }
-        .hint code {
-            font-family: var(--mono);
-            font-size: 0.95em;
-            color: #fcd34d;
-        }
-        .hint[hidden] { display: none; }
-
-        @media (max-width: 420px) {
-            .card { padding: 1.5rem; }
-            .meta-item { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
-            .meta-value { text-align: left; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.001ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.001ms !important;
-            }
-            .card:hover { transform: none; }
-        }
-    </style>
+    @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    }
+</style>
 </head>
 <body>
-    <main class="card">
-        <div class="header">
-            <span class="badge">
-                <span class="pulse"></span>
-                ECS Fargate
-            </span>
-            <span class="status" id="status" data-state="waiting" role="status" aria-live="polite">
-                <span class="pulse" aria-hidden="true"></span>
-                <span id="status-text">connecting</span>
-            </span>
+<div class="shell">
+
+    <header>
+        <div class="wordmark">Typerush <span>/ {{ name }}</span></div>
+        <div class="modes" role="group" aria-label="Test length">
+            <button type="button" data-secs="15">15s</button>
+            <button type="button" data-secs="30" aria-pressed="true">30s</button>
+            <button type="button" data-secs="60">60s</button>
         </div>
+    </header>
 
-        <h1>{{ name }}'s Lab</h1>
-        <p class="subtitle">
-            Automated blue/green deployment pipeline managed by GitHub Actions, ECR and CodeDeploy.
-            This page polls <code>/health</code> live, so a traffic switch shows up here as it happens.
-        </p>
+    <div class="readout">
+        <div class="stat"><span class="k">wpm</span><span class="v" id="wpm">0</span></div>
+        <div class="stat"><span class="k">accuracy</span><span class="v" id="acc">100%</span></div>
+        <div class="stat clock" id="clockbox"><span class="k">time</span><span class="v" id="clock">30</span></div>
+    </div>
 
-        <div class="meta-grid">
-            <div class="meta-item" id="version-item">
-                <span class="meta-label">Deployment tag</span>
-                <span class="meta-value" id="version">{{ version }}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Strategy</span>
-                <span class="meta-value">CodeDeploy Blue/Green</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Health check</span>
-                <span class="meta-value status-ok" id="health">&mdash;</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Response time</span>
-                <span class="meta-value plain" id="latency">&mdash;</span>
-            </div>
+    <div class="surface" id="surface">
+        <div class="viewport"><div class="stream" id="stream"></div></div>
+        <textarea id="catcher" autocomplete="off" autocorrect="off" autocapitalize="off"
+                  spellcheck="false" aria-label="Type here"></textarea>
+        <div class="veil">click or press any key to focus</div>
+    </div>
+
+    <section class="result" id="result" aria-live="polite">
+        <div class="grid">
+            <div><span class="k">words per minute</span><span class="big" id="r-wpm">0</span></div>
+            <div><span class="k">accuracy</span><span class="v" id="r-acc">0%</span></div>
+            <div><span class="k">characters</span><span class="v" id="r-chars">0</span></div>
+            <div><span class="k">personal best</span><span class="v" id="r-best">&mdash;</span></div>
         </div>
+    </section>
 
-        <section class="timeline">
-            <h2>Version timeline</h2>
-            <ol id="timeline" aria-live="polite"></ol>
-        </section>
+    <footer>
+        <span><kbd>Tab</kbd> restart &nbsp;&middot;&nbsp; <kbd>Esc</kbd> new words</span>
+        <span><span id="dot">&#9679;</span> fargate &nbsp;&middot;&nbsp; <span id="build">{{ version }}</span></span>
+    </footer>
 
-        <p class="hint" id="hint" hidden>
-            Version reads <code>dev</code>, which means <code>APP_VERSION</code> was never passed
-            into the image. Add <code>build-args: APP_VERSION=&lt;tag&gt;</code> to the build step
-            so you can tell which build is live.
-        </p>
-    </main>
+</div>
 
-    <script>
-        (function () {
-            var POLL_MS = 3000;
-            var STORE_KEY = "bg-version-timeline";
-            var MAX_ENTRIES = 12;
+<script>
+(function () {
+    var stream   = document.getElementById("stream");
+    var surface  = document.getElementById("surface");
+    var catcher  = document.getElementById("catcher");
+    var elWpm    = document.getElementById("wpm");
+    var elAcc    = document.getElementById("acc");
+    var elClock  = document.getElementById("clock");
+    var clockBox = document.getElementById("clockbox");
+    var result   = document.getElementById("result");
+    var elBuild  = document.getElementById("build");
+    var elDot    = document.getElementById("dot");
 
-            var elStatus = document.getElementById("status");
-            var elStatusText = document.getElementById("status-text");
-            var elVersion = document.getElementById("version");
-            var elVersionItem = document.getElementById("version-item");
-            var elHealth = document.getElementById("health");
-            var elLatency = document.getElementById("latency");
-            var elTimeline = document.getElementById("timeline");
-            var elHint = document.getElementById("hint");
+    var LIMIT = 30;
+    var words = [];
+    var wi = 0, ci = 0;
+    var typed = 0, hits = 0;
+    var running = false, done = false;
+    var startedAt = 0, tick = null, left = LIMIT;
 
-            var current = elVersion.textContent.trim();
-            var entries = load();
+    /* ---------- word supply ---------- */
 
-            if (!entries.length) {
-                entries.push({ time: stamp(), version: current, switched: false });
-                save();
-            }
-            render();
-            toggleHint(current);
-
-            function stamp() {
-                return new Date().toLocaleTimeString([], {
-                    hour: "2-digit", minute: "2-digit", second: "2-digit"
-                });
-            }
-
-            function load() {
-                try {
-                    var raw = sessionStorage.getItem(STORE_KEY);
-                    return raw ? JSON.parse(raw) : [];
-                } catch (e) {
-                    return [];
-                }
-            }
-
-            function save() {
-                try {
-                    sessionStorage.setItem(STORE_KEY, JSON.stringify(entries));
-                } catch (e) { /* private mode, quota, blocked - not important */ }
-            }
-
-            function render() {
-                elTimeline.innerHTML = "";
-                entries.slice(-MAX_ENTRIES).reverse().forEach(function (item) {
-                    var li = document.createElement("li");
-                    if (item.switched) li.className = "switched";
-
-                    var t = document.createElement("span");
-                    t.className = "t-time";
-                    t.textContent = item.time;
-
-                    var v = document.createElement("span");
-                    v.className = "t-ver";
-                    v.textContent = item.version;
-
-                    li.appendChild(t);
-                    li.appendChild(v);
-                    elTimeline.appendChild(li);
-                });
-            }
-
-            function toggleHint(version) {
-                elHint.hidden = version !== "dev";
-            }
-
-            function setStatus(state, text) {
-                elStatus.setAttribute("data-state", state);
-                elStatusText.textContent = text;
-            }
-
-            function onVersionChange(next) {
-                current = next;
-                elVersion.textContent = next;
-                entries.push({ time: stamp(), version: next, switched: true });
-                if (entries.length > MAX_ENTRIES * 2) entries = entries.slice(-MAX_ENTRIES);
-                save();
-                render();
-                toggleHint(next);
-
-                elVersionItem.classList.remove("flash");
-                void elVersionItem.offsetWidth;   // restart the animation
-                elVersionItem.classList.add("flash");
-            }
-
-            function poll() {
-                var started = performance.now();
-
-                fetch("/health", { cache: "no-store" })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("HTTP " + res.status);
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        var ms = Math.round(performance.now() - started);
-                        setStatus("up", "healthy");
-                        elHealth.textContent = data.status || "ok";
-                        elLatency.textContent = ms + " ms";
-
-                        var next = (data.version || "unknown").trim();
-                        if (next !== current) onVersionChange(next);
-                    })
-                    .catch(function (err) {
-                        setStatus("down", "unreachable");
-                        elHealth.textContent = String(err.message || err);
-                        elLatency.textContent = "—";
-                    });
-            }
-
-            poll();
-            var timer = setInterval(poll, POLL_MS);
-
-            // Don't hammer the ALB while the tab is hidden.
-            document.addEventListener("visibilitychange", function () {
-                if (document.hidden) {
-                    clearInterval(timer);
-                } else {
-                    poll();
-                    timer = setInterval(poll, POLL_MS);
-                }
+    function fetchWords() {
+        return fetch("/api/words?count=120", { cache: "no-store" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { return d.words; })
+            .catch(function () {
+                return "the and for you that with have this from they but not are was one all"
+                       .split(" ");
             });
-        })();
-    </script>
+    }
+
+    function paint() {
+        stream.innerHTML = "";
+        words.forEach(function (w, i) {
+            var span = document.createElement("span");
+            span.className = "w";
+            span.dataset.i = i;
+            w.split("").forEach(function (ch) {
+                var c = document.createElement("span");
+                c.className = "c";
+                c.textContent = ch;
+                span.appendChild(c);
+            });
+            stream.appendChild(span);
+        });
+        stream.style.transform = "translateY(0)";
+        mark();
+    }
+
+    function mark() {
+        var old = stream.querySelector(".c.at");
+        if (old) old.classList.remove("at");
+        var word = stream.children[wi];
+        if (!word) return;
+        var target = word.children[Math.min(ci, word.children.length - 1)];
+        if (target) target.classList.add("at");
+        scroll(word);
+    }
+
+    function scroll(word) {
+        var lineH = parseFloat(getComputedStyle(stream).lineHeight);
+        var line = Math.round(word.offsetTop / lineH);
+        var shift = Math.max(0, line - 1) * lineH;
+        stream.style.transform = "translateY(" + (-shift) + "px)";
+    }
+
+    /* ---------- clock and stats ---------- */
+
+    function begin() {
+        if (running || done) return;
+        running = true;
+        startedAt = Date.now();
+        clockBox.classList.add("running");
+        tick = setInterval(function () {
+            left = LIMIT - Math.floor((Date.now() - startedAt) / 1000);
+            if (left <= 0) { left = 0; finish(); }
+            elClock.textContent = left;
+            stats();
+        }, 200);
+    }
+
+    function stats() {
+        var mins = (Date.now() - startedAt) / 60000;
+        var wpm = mins > 0 ? Math.round((hits / 5) / mins) : 0;
+        elWpm.textContent = wpm < 0 ? 0 : wpm;
+        elAcc.textContent = (typed ? Math.round((hits / typed) * 100) : 100) + "%";
+        return wpm;
+    }
+
+    function finish() {
+        clearInterval(tick);
+        running = false;
+        done = true;
+        clockBox.classList.remove("running");
+
+        var mins = LIMIT / 60;
+        var wpm = Math.max(0, Math.round((hits / 5) / mins));
+        var acc = typed ? Math.round((hits / typed) * 100) : 100;
+
+        document.getElementById("r-wpm").textContent = wpm;
+        document.getElementById("r-acc").textContent = acc + "%";
+        document.getElementById("r-chars").textContent = hits + " / " + typed;
+
+        var key = "typerush-best-" + LIMIT;
+        var best = 0;
+        try { best = parseInt(localStorage.getItem(key) || "0", 10); } catch (e) {}
+        var elBest = document.getElementById("r-best");
+        if (wpm > best) {
+            try { localStorage.setItem(key, String(wpm)); } catch (e) {}
+            elBest.textContent = wpm + " new";
+            elBest.classList.add("pb");
+        } else {
+            elBest.textContent = best ? String(best) : "—";
+            elBest.classList.remove("pb");
+        }
+        result.classList.add("show");
+    }
+
+    /* ---------- reset ---------- */
+
+    function reset(fresh) {
+        clearInterval(tick);
+        wi = 0; ci = 0; typed = 0; hits = 0;
+        running = false; done = false;
+        left = LIMIT;
+        elClock.textContent = LIMIT;
+        elWpm.textContent = "0";
+        elAcc.textContent = "100%";
+        clockBox.classList.remove("running");
+        result.classList.remove("show");
+
+        if (fresh) {
+            fetchWords().then(function (w) { words = w; paint(); });
+        } else {
+            paint();
+        }
+    }
+
+    /* ---------- typing ---------- */
+
+    function type(ch) {
+        var word = stream.children[wi];
+        if (!word) return;
+        begin();
+        typed++;
+
+        if (ci < words[wi].length) {
+            var cell = word.children[ci];
+            if (ch === words[wi][ci]) { cell.className = "c hit"; hits++; }
+            else { cell.className = "c miss"; }
+        } else {
+            var extra = document.createElement("span");
+            extra.className = "c extra";
+            extra.textContent = ch;
+            word.appendChild(extra);
+        }
+        ci++;
+        mark();
+    }
+
+    function space() {
+        if (!running && !done) begin();
+        var word = stream.children[wi];
+        if (!word) return;
+        if (ci === 0) return;                       // ignore leading spaces
+        if (word.querySelector(".miss, .extra") || ci < words[wi].length) {
+            word.classList.add("done", "bad");
+        } else {
+            word.classList.add("done");
+        }
+        wi++; ci = 0;
+        if (wi >= words.length) { finish(); return; }
+        mark();
+    }
+
+    function back() {
+        if (ci === 0) return;
+        var word = stream.children[wi];
+        ci--;
+        var cell = word.children[ci];
+        if (cell.classList.contains("extra")) { cell.remove(); }
+        else { cell.className = "c"; }
+        if (typed > 0) typed--;
+        mark();
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Tab")    { e.preventDefault(); reset(false); catcher.focus(); return; }
+        if (e.key === "Escape") { e.preventDefault(); reset(true);  catcher.focus(); return; }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (done) return;
+
+        if (e.key === "Backspace") { e.preventDefault(); back(); return; }
+        if (e.key === " ")         { e.preventDefault(); space(); return; }
+        if (e.key.length === 1)    { e.preventDefault(); type(e.key); }
+    });
+
+    /* focus handling: the textarea keeps mobile keyboards up */
+    function focusIn()  { surface.classList.remove("blurred"); }
+    function focusOut() { surface.classList.add("blurred"); }
+    catcher.addEventListener("focus", focusIn);
+    catcher.addEventListener("blur", focusOut);
+    surface.addEventListener("click", function () { catcher.focus(); });
+    document.addEventListener("keydown", function () { if (!done) catcher.focus(); });
+
+    /* ---------- modes ---------- */
+
+    Array.prototype.forEach.call(document.querySelectorAll(".modes button"), function (b) {
+        b.addEventListener("click", function () {
+            Array.prototype.forEach.call(document.querySelectorAll(".modes button"), function (o) {
+                o.removeAttribute("aria-pressed");
+            });
+            b.setAttribute("aria-pressed", "true");
+            LIMIT = parseInt(b.dataset.secs, 10);
+            reset(true);
+            catcher.focus();
+        });
+    });
+
+    /* ---------- build badge: quiet, but shows a blue/green switch ---------- */
+
+    var build = elBuild.textContent.trim();
+    setInterval(function () {
+        if (running) return;                        // never poll mid-test
+        fetch("/health", { cache: "no-store" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                elDot.classList.remove("down");
+                if (d.version && d.version !== build) {
+                    build = d.version;
+                    elBuild.textContent = build;
+                    elBuild.classList.add("moved");
+                    setTimeout(function () { elBuild.classList.remove("moved"); }, 6000);
+                }
+            })
+            .catch(function () { elDot.classList.add("down"); });
+    }, 5000);
+
+    reset(true);
+    catcher.focus();
+    focusOut();
+})();
+</script>
 </body>
 </html>

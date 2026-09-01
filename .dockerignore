@@ -11,9 +11,11 @@ venv/
 env/
 *.egg-info/
  
-# CI/CD and infra - not needed inside the image itself
+# CI/CD, infra and tests - not needed inside the image itself
 .github/
 infra/
+tests/
+.pytest_cache/
  
 # Docs
 *.md
